@@ -728,7 +728,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
 /* ── Invoice Document Styles ──────────────────────────────── */
 .inv-title {
   font-family: 'Playfair Display', 'Times New Roman', Georgia, serif;
-  font-size: 20pt;
+  font-size: 28pt;
   font-weight: 700;
   text-align: center;
   text-decoration: underline;
@@ -864,7 +864,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
 }
 
 @media print {
-  .inv-title { font-size: 18pt; }
+  .inv-title { font-size: 28pt; }
   .inv-amount { font-size: 20pt; }
 }
 
