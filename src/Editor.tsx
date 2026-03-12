@@ -2,6 +2,37 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from './api';
 
+function ItemImageUploader({ value, onChange }: { value: string; onChange: (src: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => onChange(ev.target?.result as string);
+          reader.readAsDataURL(file);
+        }} />
+      {value ? (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <img src={value} alt="Item" style={{ width: 100, height: 100, objectFit: 'contain', border: '1px solid #ddd', borderRadius: 6 }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => inputRef.current?.click()}>Replace</button>
+            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red, #c0392b)' }} onClick={() => onChange('')}>Remove</button>
+          </div>
+        </div>
+      ) : (
+        <div className="image-dropzone" style={{ padding: '16px 24px', cursor: 'pointer' }} onClick={() => inputRef.current?.click()}>
+          <div className="image-dropzone-icon">📷</div>
+          <p style={{ fontWeight: 600, margin: 0 }}>Click to add item image</p>
+          <p style={{ margin: 0, fontSize: 12 }}>JPEG, PNG, WEBP</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const emptyData = {
   invoiceNumber: '',
   customerName: '',
@@ -13,6 +44,7 @@ const emptyData = {
   ringSize: '',
   totalWeight: '',
   metal: '',
+  itemImage: '',
 };
 
 export default function Editor() {
@@ -36,6 +68,7 @@ export default function Editor() {
           ringSize: r.ring_size || '',
           totalWeight: r.total_weight || '',
           metal: r.metal || '',
+          itemImage: r.item_image || '',
         });
         if (editorRef.current) editorRef.current.innerHTML = r.description_html || '';
       }).catch(console.error);
@@ -64,6 +97,7 @@ export default function Editor() {
     ring_size: data.ringSize,
     total_weight: data.totalWeight,
     metal: data.metal,
+    item_image: data.itemImage,
     status,
   });
 
@@ -194,6 +228,10 @@ export default function Editor() {
             <div className="form-row">
               <label className="form-label">Metal <span className="form-hint">optional</span></label>
               <input type="text" value={data.metal} onChange={e => set('metal', e.target.value)} placeholder="18 Carat Yellow Gold (Hallmarked)" />
+            </div>
+            <div className="form-row">
+              <label className="form-label">Item Image <span className="form-hint">optional — appears on invoice</span></label>
+              <ItemImageUploader value={data.itemImage} onChange={v => set('itemImage', v)} />
             </div>
           </div>
         </div>

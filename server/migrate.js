@@ -31,6 +31,8 @@ const SQL = `
   CREATE INDEX IF NOT EXISTS invoices_customer_name_idx ON invoices(customer_name);
   CREATE INDEX IF NOT EXISTS invoices_date_idx ON invoices(date_of_issue);
   CREATE INDEX IF NOT EXISTS invoices_status_idx ON invoices(status);
+
+  ALTER TABLE invoices ADD COLUMN IF NOT EXISTS item_image TEXT DEFAULT '';
 `;
 
 async function migrate() {

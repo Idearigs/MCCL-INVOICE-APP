@@ -51,18 +51,19 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { invoice_number, customer_name, customer_address, date_of_issue,
-            amount, description_html, item_name, ring_size, total_weight, metal } = req.body;
+            amount, description_html, item_name, ring_size, total_weight, metal,
+            item_image, status: bodyStatus } = req.body;
 
-    const status = (customer_name && date_of_issue && amount && description_html) ? 'complete' : 'draft';
+    const status = bodyStatus || 'draft';
 
     const { rows } = await pool.query(
       `INSERT INTO invoices
          (invoice_number, customer_name, customer_address, date_of_issue,
-          amount, description_html, item_name, ring_size, total_weight, metal, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+          amount, description_html, item_name, ring_size, total_weight, metal, item_image, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        RETURNING *`,
       [invoice_number, customer_name, customer_address, date_of_issue,
-       amount, description_html, item_name, ring_size, total_weight, metal, status]
+       amount, description_html, item_name, ring_size, total_weight, metal, item_image || '', status]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -75,18 +76,20 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { invoice_number, customer_name, customer_address, date_of_issue,
-            amount, description_html, item_name, ring_size, total_weight, metal } = req.body;
+            amount, description_html, item_name, ring_size, total_weight, metal,
+            item_image, status: bodyStatus } = req.body;
 
-    const status = (customer_name && date_of_issue && amount && description_html) ? 'complete' : 'draft';
+    const status = bodyStatus || 'draft';
 
     const { rows } = await pool.query(
       `UPDATE invoices SET
          invoice_number=$1, customer_name=$2, customer_address=$3, date_of_issue=$4,
          amount=$5, description_html=$6, item_name=$7, ring_size=$8,
-         total_weight=$9, metal=$10, status=$11, updated_at=NOW()
-       WHERE id=$12 RETURNING *`,
+         total_weight=$9, metal=$10, item_image=$11, status=$12, updated_at=NOW()
+       WHERE id=$13 RETURNING *`,
       [invoice_number, customer_name, customer_address, date_of_issue,
-       amount, description_html, item_name, ring_size, total_weight, metal, status, req.params.id]
+       amount, description_html, item_name, ring_size, total_weight, metal,
+       item_image || '', status, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);

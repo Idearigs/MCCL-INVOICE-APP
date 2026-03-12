@@ -131,6 +131,11 @@ export default function Preview() {
                     {record.ring_size && <div className="inv-item-row"><em>Ring Size: {record.ring_size}</em></div>}
                     {record.total_weight && <div className="inv-item-row"><em>Total Weight: {record.total_weight}</em></div>}
                     {record.metal && <div className="inv-item-row"><em>Metal: {record.metal}</em></div>}
+                    {record.item_image && (
+                      <div className="inv-item-img-wrap">
+                        <img src={record.item_image} alt="Item" className="inv-item-img" />
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="inv-divider" />
