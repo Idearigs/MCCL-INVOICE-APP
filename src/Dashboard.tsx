@@ -143,43 +143,69 @@ export default function Dashboard() {
               )}
             </div>
           ) : (
-            <div className="dash-table-wrap">
-              <table className="dash-table">
-                <thead>
-                  <tr>
-                    <th>Invoice #</th>
-                    <th>Customer</th>
-                    <th>Item</th>
-                    <th>Amount (GBP)</th>
-                    <th>Date of Issue</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(r => (
-                    <tr key={r.id} className="dash-row">
-                      <td className="dash-cell-meta">{r.invoice_number ? `#${r.invoice_number}` : '—'}</td>
-                      <td className="dash-cell-name">{r.customer_name || '—'}</td>
-                      <td>{r.item_name || '—'}</td>
-                      <td className="dash-cell-value">
-                        {r.amount ? `£${parseFloat(r.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}` : '—'}
-                      </td>
-                      <td>{formatDate(r.date_of_issue)}</td>
-                      <td><span className={`dash-badge ${r.status}`}>{r.status === 'complete' ? 'Complete' : 'Draft'}</span></td>
-                      <td>
-                        <div className="dash-actions">
-                          <button className="dash-action-btn" onClick={() => navigate(`/edit/${r.id}`)} title="Edit">✏️</button>
-                          <button className="dash-action-btn" onClick={() => navigate(`/preview/${r.id}`)} title="Preview & Print">🖨️</button>
-                          <button className="dash-action-btn download" onClick={() => navigate(`/preview/${r.id}?download=true`)} title="Download PDF">⬇</button>
-                          <button className="dash-action-btn danger" onClick={() => setDeleteConfirm(r.id)} title="Delete">🗑️</button>
-                        </div>
-                      </td>
+            <>
+              {/* Desktop table */}
+              <div className="dash-table-wrap dash-desktop-only">
+                <table className="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Invoice #</th>
+                      <th>Customer</th>
+                      <th>Item</th>
+                      <th>Amount (GBP)</th>
+                      <th>Date of Issue</th>
+                      <th>Status</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map(r => (
+                      <tr key={r.id} className="dash-row">
+                        <td className="dash-cell-meta">{r.invoice_number ? `#${r.invoice_number}` : '—'}</td>
+                        <td className="dash-cell-name">{r.customer_name || '—'}</td>
+                        <td>{r.item_name || '—'}</td>
+                        <td className="dash-cell-value">
+                          {r.amount ? `£${parseFloat(r.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}` : '—'}
+                        </td>
+                        <td>{formatDate(r.date_of_issue)}</td>
+                        <td><span className={`dash-badge ${r.status}`}>{r.status === 'complete' ? 'Complete' : 'Draft'}</span></td>
+                        <td>
+                          <div className="dash-actions">
+                            <button className="dash-action-btn" onClick={() => navigate(`/edit/${r.id}`)} title="Edit">✏️</button>
+                            <button className="dash-action-btn" onClick={() => navigate(`/preview/${r.id}`)} title="Preview & Print">🖨️</button>
+                            <button className="dash-action-btn download" onClick={() => navigate(`/preview/${r.id}?download=true`)} title="Download PDF">⬇</button>
+                            <button className="dash-action-btn danger" onClick={() => setDeleteConfirm(r.id)} title="Delete">🗑️</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="dash-cards dash-mobile-only">
+                {filtered.map(r => (
+                  <div key={r.id} className="dash-card">
+                    <div className="dash-card-top">
+                      <div className="dash-card-name">{r.customer_name || '—'} {r.invoice_number ? <span className="dash-card-num">#{r.invoice_number}</span> : ''}</div>
+                      <span className={`dash-badge ${r.status}`}>{r.status === 'complete' ? 'Complete' : 'Draft'}</span>
+                    </div>
+                    <div className="dash-card-meta">
+                      {r.item_name && <span>🛒 {r.item_name}</span>}
+                      <span>📅 {formatDate(r.date_of_issue)}</span>
+                      {r.amount && <span>💷 £{parseFloat(r.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}</span>}
+                    </div>
+                    <div className="dash-card-actions">
+                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/edit/${r.id}`)}>✏️ Edit</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/preview/${r.id}`)}>🖨️ Preview</button>
+                      <button className="btn btn-primary btn-sm" onClick={() => navigate(`/preview/${r.id}?download=true`)}>⬇ PDF</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(r.id)}>🗑️</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </main>
