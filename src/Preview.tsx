@@ -21,6 +21,24 @@ export default function Preview() {
   const [record, setRecord] = useState<any>(null);
   const [downloading, setDownloading] = useState(false);
   const docRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const A4_PX = 210 * (96 / 25.4); // 210mm in px at 96dpi ≈ 794px
+    const applyScale = () => {
+      if (!outerRef.current || !docRef.current) return;
+      const available = outerRef.current.offsetWidth;
+      const scale = Math.min(1, available / A4_PX);
+      docRef.current.style.transform = scale < 1 ? `scale(${scale})` : '';
+      docRef.current.style.transformOrigin = 'top left';
+      outerRef.current.style.height = scale < 1
+        ? `${docRef.current.scrollHeight * scale}px`
+        : '';
+    };
+    applyScale();
+    window.addEventListener('resize', applyScale);
+    return () => window.removeEventListener('resize', applyScale);
+  }, [record]);
   const autoDownloadTriggered = useRef<boolean>(false);
 
   useEffect(() => {
@@ -37,6 +55,9 @@ export default function Preview() {
   const handleDownloadPdf = async () => {
     if (!docRef.current || !record) return;
     setDownloading(true);
+    // Reset mobile scale so html2canvas captures at full A4 resolution
+    const origTransform = docRef.current.style.transform;
+    docRef.current.style.transform = '';
     try {
       const [{ jsPDF }, { default: html2canvas }] = await Promise.all([
         import('jspdf'),
@@ -93,6 +114,7 @@ export default function Preview() {
         (el as HTMLElement).style.paddingBottom = origPagePaddingBottom[i];
       });
     } finally {
+      docRef.current.style.transform = origTransform;
       setDownloading(false);
     }
   };
@@ -115,8 +137,9 @@ export default function Preview() {
         </div>
       </div>
 
-      <div ref={docRef}>
-        <div className="doc-pages-wrap">
+      <div ref={outerRef} style={{ width: '100%', overflow: 'hidden' }}>
+        <div ref={docRef}>
+          <div className="doc-pages-wrap">
           <div className="doc-page">
             <img src="/letterhead-header.png" alt="" className="doc-lh-img" />
 
@@ -161,6 +184,7 @@ export default function Preview() {
             <img src="/letterhead-footer.png" alt="" className="doc-lf-img" />
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

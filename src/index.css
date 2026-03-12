@@ -598,7 +598,7 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
 }
 
 @media (max-width: 230mm) {
-  .doc-page { width: 100%; min-height: auto; }
+  .doc-pages-wrap { padding: 0; }
 }
 
 /* ── Dashboard ────────────────────────────────────────────── */
