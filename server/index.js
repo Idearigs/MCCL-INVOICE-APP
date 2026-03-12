@@ -37,7 +37,7 @@ app.use('/api/invoices', require('./routes/invoices'));
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
 // Serve React frontend
-const clientDist = path.join(__dirname, '../dist');
+const clientDist = path.join(__dirname, 'dist');
 app.use(express.static(clientDist));
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
