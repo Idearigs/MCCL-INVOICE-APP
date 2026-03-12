@@ -781,6 +781,8 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
   background: #444;
   margin: 0 6mm;
   flex-shrink: 0;
+  align-self: stretch;
+  min-height: 160mm;
 }
 
 .inv-right {
