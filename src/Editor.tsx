@@ -53,7 +53,7 @@ export default function Editor() {
     setData(d => ({ ...d, descriptionHtml: editorRef.current?.innerHTML ?? '' }));
   };
 
-  const payload = () => ({
+  const payload = (status: 'draft' | 'complete') => ({
     invoice_number: data.invoiceNumber,
     customer_name: data.customerName,
     customer_address: data.customerAddress,
@@ -64,16 +64,18 @@ export default function Editor() {
     ring_size: data.ringSize,
     total_weight: data.totalWeight,
     metal: data.metal,
+    status,
   });
 
   const handleSave = async (andPreview = false) => {
     setSaving(true);
     try {
+      const status = andPreview ? 'complete' : 'draft';
       let saved;
       if (id) {
-        saved = await api.updateInvoice(id, payload());
+        saved = await api.updateInvoice(id, payload(status));
       } else {
-        saved = await api.createInvoice(payload());
+        saved = await api.createInvoice(payload(status));
       }
       if (andPreview) navigate(`/preview/${saved.id}`);
       else navigate('/');

@@ -114,13 +114,13 @@ export default function Dashboard() {
             />
             <span className="dash-count">{filtered.length} {filtered.length === 1 ? 'invoice' : 'invoices'}</span>
           </div>
-          <div className="dash-date-filters" style={{ padding: '8px 20px 12px' }}>
-            <span style={{ fontSize: 13, color: 'var(--grey)', fontWeight: 600 }}>Filter by date:</span>
+          <div className="dash-date-filters">
+            <span className="dash-date-label">Date:</span>
             <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="dash-date-input" title="From date" />
-            <span style={{ fontSize: 13, color: 'var(--grey)' }}>to</span>
+            <span className="dash-date-label">—</span>
             <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="dash-date-input" title="To date" />
             {(dateFrom || dateTo) && (
-              <button className="btn btn-ghost btn-sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>Clear</button>
+              <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => { setDateFrom(''); setDateTo(''); }}>✕</button>
             )}
           </div>
 
@@ -171,7 +171,7 @@ export default function Dashboard() {
                         <div className="dash-actions">
                           <button className="dash-action-btn" onClick={() => navigate(`/edit/${r.id}`)} title="Edit">✏️</button>
                           <button className="dash-action-btn" onClick={() => navigate(`/preview/${r.id}`)} title="Preview & Print">🖨️</button>
-                          <button className="dash-action-btn" onClick={() => navigate(`/preview/${r.id}?download=true`)} title="Download PDF">⬇</button>
+                          <button className="dash-action-btn download" onClick={() => navigate(`/preview/${r.id}?download=true`)} title="Download PDF">⬇</button>
                           <button className="dash-action-btn danger" onClick={() => setDeleteConfirm(r.id)} title="Delete">🗑️</button>
                         </div>
                       </td>
