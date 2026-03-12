@@ -1,33 +1,51 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { InvoiceData, InvoiceRecord, defaultData } from './types';
-import { getRecord, saveRecord, newId, nextInvoiceNumber } from './storage';
+import { api } from './api';
+
+const emptyData = {
+  invoiceNumber: '',
+  customerName: '',
+  customerAddress: '',
+  dateOfIssue: new Date().toISOString().split('T')[0],
+  amount: '',
+  descriptionHtml: '',
+  itemName: '',
+  ringSize: '',
+  totalWeight: '',
+  metal: '',
+};
 
 export default function Editor() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<InvoiceData>({ ...defaultData });
-  const [recordId] = useState(() => id ?? newId());
-  const [createdAt] = useState(() => id ? (getRecord(id)?.createdAt ?? new Date().toISOString()) : new Date().toISOString());
+  const [data, setData] = useState({ ...emptyData });
+  const [saving, setSaving] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (id) {
-      const r = getRecord(id);
-      if (r) setData(r.data);
+      api.getInvoice(id).then(r => {
+        setData({
+          invoiceNumber: r.invoice_number || '',
+          customerName: r.customer_name || '',
+          customerAddress: r.customer_address || '',
+          dateOfIssue: r.date_of_issue ? r.date_of_issue.split('T')[0] : emptyData.dateOfIssue,
+          amount: r.amount || '',
+          descriptionHtml: r.description_html || '',
+          itemName: r.item_name || '',
+          ringSize: r.ring_size || '',
+          totalWeight: r.total_weight || '',
+          metal: r.metal || '',
+        });
+        if (editorRef.current) editorRef.current.innerHTML = r.description_html || '';
+      }).catch(console.error);
     } else {
-      setData(d => ({ ...d, invoiceNumber: nextInvoiceNumber() }));
+      api.nextNumber().then(({ next }) => setData(d => ({ ...d, invoiceNumber: next }))).catch(() => {});
+      if (editorRef.current) editorRef.current.innerHTML = '';
     }
   }, [id]);
 
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = data.descriptionHtml || '';
-    }
-  }, []);
-
-  const set = (field: keyof InvoiceData, value: string) =>
-    setData(d => ({ ...d, [field]: value }));
+  const set = (field: string, value: string) => setData(d => ({ ...d, [field]: value }));
 
   const execCmd = (cmd: string) => {
     editorRef.current?.focus();
@@ -35,20 +53,35 @@ export default function Editor() {
     setData(d => ({ ...d, descriptionHtml: editorRef.current?.innerHTML ?? '' }));
   };
 
-  const handleSave = (andPreview = false) => {
-    const record: InvoiceRecord = {
-      id: recordId,
-      customerName: data.customerName,
-      dateOfIssue: data.dateOfIssue,
-      amount: data.amount,
-      status: 'draft',
-      createdAt,
-      updatedAt: new Date().toISOString(),
-      data,
-    };
-    saveRecord(record);
-    if (andPreview) navigate(`/preview/${recordId}`);
-    else navigate('/');
+  const payload = () => ({
+    invoice_number: data.invoiceNumber,
+    customer_name: data.customerName,
+    customer_address: data.customerAddress,
+    date_of_issue: data.dateOfIssue || null,
+    amount: data.amount,
+    description_html: data.descriptionHtml,
+    item_name: data.itemName,
+    ring_size: data.ringSize,
+    total_weight: data.totalWeight,
+    metal: data.metal,
+  });
+
+  const handleSave = async (andPreview = false) => {
+    setSaving(true);
+    try {
+      let saved;
+      if (id) {
+        saved = await api.updateInvoice(id, payload());
+      } else {
+        saved = await api.createInvoice(payload());
+      }
+      if (andPreview) navigate(`/preview/${saved.id}`);
+      else navigate('/');
+    } catch (err: any) {
+      alert(err.message || 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -58,8 +91,10 @@ export default function Editor() {
           <div className="form-brand">McCulloch — <span>Invoice Manager</span></div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>Cancel</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => handleSave(false)}>Save Draft</button>
-            <button className="btn btn-primary btn-sm" onClick={() => handleSave(true)}>Save & Preview</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => handleSave(false)} disabled={saving}>Save Draft</button>
+            <button className="btn btn-primary btn-sm" onClick={() => handleSave(true)} disabled={saving}>
+              {saving ? 'Saving…' : 'Save & Preview'}
+            </button>
           </div>
         </div>
       </header>

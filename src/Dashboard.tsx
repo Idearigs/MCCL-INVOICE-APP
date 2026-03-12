@@ -1,44 +1,62 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { InvoiceRecord } from './types';
-import { getAllRecords, deleteRecord } from './storage';
+import { api, clearToken } from './api';
 
 function formatDate(iso: string) {
   if (!iso) return '—';
-  return new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  });
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [records, setRecords] = useState<InvoiceRecord[]>([]);
+  const [records, setRecords] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const load = () => setRecords(getAllRecords());
-  useEffect(load, []);
+  const load = async () => {
+    try {
+      const data = await api.getInvoices();
+      setRecords(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleDelete = (id: string) => {
-    deleteRecord(id);
-    setDeleteConfirm(null);
-    load();
+  useEffect(() => { load(); }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await api.deleteInvoice(id);
+      setDeleteConfirm(null);
+      load();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    window.location.href = '/login';
   };
 
   const filtered = records.filter(r =>
-    r.customerName.toLowerCase().includes(search.toLowerCase()) ||
-    r.dateOfIssue?.includes(search) ||
-    r.data.invoiceNumber?.includes(search)
+    (r.customer_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (r.date_of_issue || '').includes(search) ||
+    (r.invoice_number || '').includes(search)
   );
 
   const thisMonth = records.filter(r => {
-    const d = new Date(r.createdAt);
+    const d = new Date(r.created_at);
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
   const totalRevenue = records.reduce((sum, r) => {
-    const n = parseFloat(r.amount?.replace(/[£,]/g, '') || '0');
+    const n = parseFloat((r.amount || '').replace(/[£,]/g, ''));
     return sum + (isNaN(n) ? 0 : n);
   }, 0);
 
@@ -49,9 +67,10 @@ export default function Dashboard() {
           <div className="dash-brand">
             <div className="dash-brand-text">McCulloch - Invoice Manager</div>
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('/new')}>
-            + New Invoice
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-primary" onClick={() => navigate('/new')}>+ New Invoice</button>
+            <button className="btn btn-ghost" onClick={handleLogout}>Sign out</button>
+          </div>
         </div>
       </header>
 
@@ -86,12 +105,12 @@ export default function Dashboard() {
               onChange={e => setSearch(e.target.value)}
               className="dash-search"
             />
-            <span className="dash-count">
-              {filtered.length} {filtered.length === 1 ? 'invoice' : 'invoices'}
-            </span>
+            <span className="dash-count">{filtered.length} {filtered.length === 1 ? 'invoice' : 'invoices'}</span>
           </div>
 
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="dash-empty"><div style={{ color: 'var(--grey)' }}>Loading…</div></div>
+          ) : filtered.length === 0 ? (
             <div className="dash-empty">
               {records.length === 0 ? (
                 <>
@@ -123,18 +142,14 @@ export default function Dashboard() {
               <tbody>
                 {filtered.map(r => (
                   <tr key={r.id} className="dash-row">
-                    <td className="dash-cell-meta">{r.data.invoiceNumber ? `#${r.data.invoiceNumber}` : '—'}</td>
-                    <td className="dash-cell-name">{r.customerName || '—'}</td>
-                    <td>{r.data.itemName || '—'}</td>
+                    <td className="dash-cell-meta">{r.invoice_number ? `#${r.invoice_number}` : '—'}</td>
+                    <td className="dash-cell-name">{r.customer_name || '—'}</td>
+                    <td>{r.item_name || '—'}</td>
                     <td className="dash-cell-value">
                       {r.amount ? `£${parseFloat(r.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}` : '—'}
                     </td>
-                    <td>{formatDate(r.dateOfIssue)}</td>
-                    <td>
-                      <span className={`dash-badge ${r.status}`}>
-                        {r.status === 'complete' ? 'Complete' : 'Draft'}
-                      </span>
-                    </td>
+                    <td>{formatDate(r.date_of_issue)}</td>
+                    <td><span className={`dash-badge ${r.status}`}>{r.status === 'complete' ? 'Complete' : 'Draft'}</span></td>
                     <td>
                       <div className="dash-actions">
                         <button className="dash-action-btn" onClick={() => navigate(`/edit/${r.id}`)} title="Edit">✏️</button>
