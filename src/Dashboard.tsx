@@ -187,20 +187,28 @@ export default function Dashboard() {
               <div className="dash-cards dash-mobile-only">
                 {filtered.map(r => (
                   <div key={r.id} className="dash-card">
-                    <div className="dash-card-top">
-                      <div className="dash-card-name">{r.customer_name || '—'} {r.invoice_number ? <span className="dash-card-num">#{r.invoice_number}</span> : ''}</div>
-                      <span className={`dash-badge ${r.status}`}>{r.status === 'complete' ? 'Complete' : 'Draft'}</span>
-                    </div>
-                    <div className="dash-card-meta">
-                      {r.item_name && <span>🛒 {r.item_name}</span>}
-                      <span>📅 {formatDate(r.date_of_issue)}</span>
-                      {r.amount && <span>💷 £{parseFloat(r.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}</span>}
+                    <div className="dash-card-body">
+                      <div className="dash-card-row1">
+                        <div className="dash-card-left">
+                          <div className="dash-card-name">{r.customer_name || '—'}</div>
+                          <div className="dash-card-sub">
+                            {r.invoice_number ? `#${r.invoice_number}` : ''}
+                            {r.invoice_number && r.date_of_issue ? ' · ' : ''}
+                            {formatDate(r.date_of_issue)}
+                            {r.item_name ? ` · ${r.item_name}` : ''}
+                          </div>
+                        </div>
+                        <div className="dash-card-right">
+                          {r.amount && <div className="dash-card-amount">£{parseFloat(r.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}</div>}
+                          <span className={`dash-badge ${r.status}`}>{r.status === 'complete' ? 'Complete' : 'Draft'}</span>
+                        </div>
+                      </div>
                     </div>
                     <div className="dash-card-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/edit/${r.id}`)}>✏️ Edit</button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/preview/${r.id}`)}>🖨️ Preview</button>
-                      <button className="btn btn-primary btn-sm" onClick={() => navigate(`/preview/${r.id}?download=true`)}>⬇ PDF</button>
-                      <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(r.id)}>🗑️</button>
+                      <button className="dash-act-btn" onClick={() => navigate(`/edit/${r.id}`)}>Edit</button>
+                      <button className="dash-act-btn" onClick={() => navigate(`/preview/${r.id}`)}>Preview</button>
+                      <button className="dash-act-btn primary" onClick={() => navigate(`/preview/${r.id}?download=true`)}>PDF</button>
+                      <button className="dash-act-btn danger" onClick={() => setDeleteConfirm(r.id)}>Delete</button>
                     </div>
                   </div>
                 ))}
@@ -213,8 +221,7 @@ export default function Dashboard() {
       {deleteConfirm && (
         <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Delete Invoice?</h3>
+            <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>Delete Invoice?</h3>
             <p style={{ color: 'var(--grey)', marginBottom: 24, fontSize: 14 }}>This cannot be undone.</p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setDeleteConfirm(null)}>Cancel</button>
