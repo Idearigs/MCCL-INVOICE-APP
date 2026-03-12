@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from './api';
 
 function formatDate(iso: string) {
@@ -17,13 +17,22 @@ function formatAmount(raw: string) {
 export default function Preview() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [record, setRecord] = useState<any>(null);
   const [downloading, setDownloading] = useState(false);
   const docRef = useRef<HTMLDivElement>(null);
+  const autoDownloadTriggered = useRef<boolean>(false);
 
   useEffect(() => {
     if (id) api.getInvoice(id).then(setRecord).catch(console.error);
   }, [id]);
+
+  useEffect(() => {
+    if (record && searchParams.get('download') === 'true' && !autoDownloadTriggered.current) {
+      autoDownloadTriggered.current = true;
+      handleDownloadPdf();
+    }
+  }, [record]);
 
   const handleDownloadPdf = async () => {
     if (!docRef.current || !record) return;
@@ -35,6 +44,31 @@ export default function Preview() {
       ]);
 
       const pages = docRef.current.querySelectorAll('.doc-page');
+
+      // Hide letterhead images and add padding for clean PDF
+      const lhImgs = docRef.current.querySelectorAll('.doc-lh-img');
+      const lfImgs = docRef.current.querySelectorAll('.doc-lf-img');
+
+      const origLhDisplay: string[] = [];
+      const origLfDisplay: string[] = [];
+      const origPagePaddingTop: string[] = [];
+      const origPagePaddingBottom: string[] = [];
+
+      lhImgs.forEach((el, i) => {
+        origLhDisplay[i] = (el as HTMLElement).style.display;
+        (el as HTMLElement).style.display = 'none';
+      });
+      lfImgs.forEach((el, i) => {
+        origLfDisplay[i] = (el as HTMLElement).style.display;
+        (el as HTMLElement).style.display = 'none';
+      });
+      pages.forEach((el, i) => {
+        origPagePaddingTop[i] = (el as HTMLElement).style.paddingTop;
+        origPagePaddingBottom[i] = (el as HTMLElement).style.paddingBottom;
+        (el as HTMLElement).style.paddingTop = '20mm';
+        (el as HTMLElement).style.paddingBottom = '20mm';
+      });
+
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       const filename = `Invoice-${record.invoice_number || id}.pdf`;
 
@@ -50,6 +84,14 @@ export default function Preview() {
       }
 
       pdf.save(filename);
+
+      // Restore original styles
+      lhImgs.forEach((el, i) => { (el as HTMLElement).style.display = origLhDisplay[i]; });
+      lfImgs.forEach((el, i) => { (el as HTMLElement).style.display = origLfDisplay[i]; });
+      pages.forEach((el, i) => {
+        (el as HTMLElement).style.paddingTop = origPagePaddingTop[i];
+        (el as HTMLElement).style.paddingBottom = origPagePaddingBottom[i];
+      });
     } finally {
       setDownloading(false);
     }
