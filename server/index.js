@@ -1,4 +1,5 @@
 require('dotenv').config();
+const Sentry = require('@sentry/node');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -6,6 +7,11 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const migrate = require('./migrate');
 const seed = require('./seed');
+
+Sentry.init({
+  dsn: 'https://b981b066013dc3b9a0ee1ce86bdc9ef7@o4511162586759168.ingest.us.sentry.io/4511162607927296',
+  tracesSampleRate: 1.0,
+});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,6 +48,9 @@ app.use(express.static(clientDist));
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
+
+// Sentry error handler — must be before other error handlers
+Sentry.setupExpressErrorHandler(app);
 
 // Error handler
 app.use((err, _req, res, _next) => {
