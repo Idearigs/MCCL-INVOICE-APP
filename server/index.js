@@ -11,6 +11,7 @@ const seed = require('./seed');
 Sentry.init({
   dsn: 'https://b981b066013dc3b9a0ee1ce86bdc9ef7@o4511162586759168.ingest.us.sentry.io/4511162607927296',
   tracesSampleRate: 1.0,
+  integrations: [Sentry.expressIntegration()],
 });
 
 const app = express();
